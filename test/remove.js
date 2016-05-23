@@ -4,7 +4,7 @@ var strftime = require('strftime')
 var calendar = require('../')
 
 test('remove', function (t) {
-  t.plan(10)
+  t.plan(12)
   var cal = calendar(memdb())
   var docs = [
     {

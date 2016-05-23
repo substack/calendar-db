@@ -106,7 +106,7 @@ Cal.prototype.prepare = function (time, opts, cb) {
   }
   var p = parse(time, { created: doc.created })
 
-  var id = randombytes(16).toString('hex')
+  var id = defined(opts.id, randombytes(16).toString('hex'))
   var batch = []
   if (p.oneTime) {
     batch.push({ type: 'put', key: ID + id, value: doc })
@@ -150,7 +150,19 @@ Cal.prototype.get = function (id, cb) {
 }
 
 Cal.prototype.remove = function (id, cb) {
-  this.db.del(ID + id, cb)
+  var self = this
+  self.db.get(ID + id, function (err, doc) {
+    if (err) return cb(err)
+    var prep = self.prepare(doc.time, {
+      id: id,
+      created: doc.created
+    })
+    self.db.batch(prep.batch.map(function (row) {
+      row.type = 'del'
+      delete row.value
+      return row
+    }), cb)
+  })
 }
 
 function noop () {}
