@@ -1,6 +1,6 @@
 {
   "name": "calendar-db",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "store and query recurring and one-time events",
   "main": "index.js",
   "scripts": {
