@@ -130,6 +130,10 @@ Cal.prototype.add = function (ev, cb) {
   })
 }
 
+Cal.prototype.get = function (id, cb) {
+  this.db.get(ID + id, cb)
+}
+
 Cal.prototype.remove = function () {
 }
 
