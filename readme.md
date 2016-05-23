@@ -83,7 +83,7 @@ Create a new calendar instance `cal` from a [leveldb][1] instance `db`.
 ## cal.add(time, opts, cb)
 
 Add an event given by a free-form string `time` which is parsed by
-[parse-messy-scheule][2]. Optionally:
+[parse-messy-schedule][2]. Optionally:
 
 * `opts.created` - parse relative to this time
 * `opts.value` - a value to store alongside the time
