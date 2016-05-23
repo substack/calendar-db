@@ -134,7 +134,8 @@ Cal.prototype.get = function (id, cb) {
   this.db.get(ID + id, cb)
 }
 
-Cal.prototype.remove = function () {
+Cal.prototype.remove = function (id, cb) {
+  this.db.del(ID + id, cb)
 }
 
 function noop () {}
