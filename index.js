@@ -1,5 +1,6 @@
 var collect = require('collect-stream')
 var through = require('through2')
+var Readable = require('readable-stream').Readable
 var readonly = require('read-only-stream')
 var parse = require('parse-messy-schedule')
 var randombytes = require('randombytes')
@@ -19,7 +20,13 @@ function Cal (db) {
 Cal.prototype.query = function (opts, cb) {
   var self = this
   var pending = 2
-  var output = through.obj()
+  var output = new Readable({ objectMode: true })
+  var reading = false
+  output._read = function () {
+    reading = true
+    if (pending === 0) next()
+  }
+  var cursors = []
 
   var lt = opts.lt, gt = opts.gt
   if (lt !== undefined && tostr(lt) !== '[object Date]') lt = new Date(lt)
@@ -30,23 +37,19 @@ Cal.prototype.query = function (opts, cb) {
     lt: ONETIME + defined(opts.lt, '\uffff')
   })
   r0.on('error', output.emit.bind(output, 'error'))
-  r0.pipe(through.obj(writeOne, done))
-    .pipe(output, { end: false })
+  r0.pipe(through.obj(write, done))
 
   var r1 = self.db.createReadStream({
     gt: END + defined(opts.gt, ''),
     lt: END + '\uffff'
   })
   r1.on('error', output.emit.bind(output, 'error'))
-  r1.pipe(through.obj(writeEnd, done))
-    .pipe(output, { end: false })
-
-  // TODO: filter in both directions in parallel until one finishes
+  r1.pipe(through.obj(write, done))
 
   if (cb) collect(output, cb)
   return readonly(output)
 
-  function writeEnd (row, enc, next) {
+  function write (row, enc, next) {
     var tr = this
     var id = row.key.split('!')[2]
     self.db.get(ID + id, function (err, doc) {
@@ -54,34 +57,41 @@ Cal.prototype.query = function (opts, cb) {
       var p = parse(doc.time, { created: doc.created })
       var b = strftime('%F', p.range[0])
       if (opts.lt === undefined || b < opts.lt) {
-        var x = gt
-        do {
-          x = p.next(x)
-          if (x < lt) {
-            tr.push({
-              key: id,
-              time: x,
-              value: doc.value
-            })
-          }
-        } while (x < lt)
-        next()
-      } else next()
+        cursors.push({
+          id: id,
+          value: doc.value,
+          current: p.oneTime ? p.range[0] : p.next(gt),
+          iterator: p
+        })
+      }
+      next()
     })
   }
-  function writeOne (row, enc, next) {
-    var id = row.key.split('!')[2]
-    self.db.get(ID + id, function (err, doc) {
-      if (err) tr.emit('error', err)
-      var p = parse(doc.time, { created: doc.created })
-      next(err, {
-        key: id,
-        time: p.range[0],
-        value: doc.value
-      })
+  function done () {
+    if (--pending !== 0) return
+    if (reading) next()
+  }
+  function next () {
+    if (cursors.length === 0) return output.push(null)
+    var min = cursors[0].current, mini = 0
+    for (var i = 1; i < cursors.length; i++) {
+      if (cursors[i].current < min) {
+        min = cursors[i].current
+        mini = i
+      }
+    }
+    var c = cursors[mini]
+    var t = c.current
+    c.current = c.iterator.next(c.current)
+    if (!c.current || c.current >= lt) {
+      cursors.splice(mini, 1)
+    }
+    output.push({
+      key: c.id,
+      time: t,
+      value: c.value
     })
   }
-  function done () { if (--pending === 0) output.end() }
 }
 
 Cal.prototype.prepare = function (time, opts, cb) {

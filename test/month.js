@@ -15,7 +15,7 @@ test('month', function (t) {
       }
     },
     {
-      time: 'sunday may 22nd',
+      time: 'sunday may 22',
       opts: {
         created: '2016-05-21',
         value: { title: 'open hack' }
@@ -36,16 +36,36 @@ test('month', function (t) {
 
   function ready () {
     var expected = [
-      { key: ids[0], time: '2016-05-05', value: 'javascript study group' },
-      { key: ids[0], time: '2016-05-12', value: 'javascript study group' },
-      { key: ids[0], time: '2016-05-19', value: 'javascript study group' },
-      { key: ids[1], time: '2016-05-21', value: 'open hack' },
-      { key: ids[0], time: '2016-05-26', value: 'javascript study group' },
+      {
+        key: ids[0],
+        time: '2016-05-05',
+        value: { title: 'javascript study group' }
+      },
+      {
+        key: ids[0],
+        time: '2016-05-12',
+        value: { title: 'javascript study group' }
+      },
+      {
+        key: ids[0],
+        time: '2016-05-19',
+        value: { title: 'javascript study group' }
+      },
+      {
+        key: ids[1],
+        time: '2016-05-21',
+        value: { title: 'open hack' }
+      },
+      {
+        key: ids[0],
+        time: '2016-05-26',
+        value: { title: 'javascript study group' }
+      }
     ]
     var monthq = { gt: '2016-05-01', lt: '2016-06-01' }
     cal.query(monthq, function (err, results) {
       t.error(err)
-      t.deepEqual(expected.map(format), results.map(format))
+      t.deepEqual(results.map(format), expected.map(format))
     })
   }
   function format (row) {
