@@ -51,14 +51,20 @@ Cal.prototype.query = function (opts, cb) {
     var id = row.key.split('!')[2]
     self.db.get(ID + id, function (err, doc) {
       if (err) return next(err)
-      var p = parse(doc)
+      var p = parse(doc.time)
       var b = strftime('%F', p.range[0])
       if (opts.lt === undefined || b < opts.lt) {
         var x = gt
         do {
           x = p.next(x)
           if (x < lt) {
-            tr.push({ key: id, value: { text: x, time: x } })
+            tr.push({
+              key: id,
+              value: {
+                title: doc.title,
+                time: x
+              }
+            })
           }
         } while (x < lt)
         next()
@@ -69,15 +75,28 @@ Cal.prototype.query = function (opts, cb) {
     var id = row.key.split('!')[2]
     self.db.get(ID + id, function (err, doc) {
       if (err) tr.emit('error', err)
-      var p = parse(doc)
-      next(err, { key: id, value: { text: doc, time: p.range[0] } })
+      var p = parse(doc.time)
+      next(err, {
+        key: id,
+        value: {
+          title: doc.title,
+          time: p.range[0]
+        }
+      })
     })
   }
   function done () { if (--pending === 0) output.end() }
 }
 
 Cal.prototype.prepare = function (ev, cb) {
-  var p = parse(ev)
+  var p
+  if (typeof ev === 'string') {
+    ev = { time: ev }
+    p = parse(ev.time)
+    ev.title = p.title
+  } else {
+    p = parse(ev.time)
+  }
   var id = randombytes(16).toString('hex')
   var batch = []
   if (p.oneTime) {
