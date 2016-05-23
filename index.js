@@ -1,7 +1,6 @@
 var collect = require('collect-stream')
 var through = require('through2')
 var Readable = require('readable-stream').Readable
-var readonly = require('read-only-stream')
 var parse = require('parse-messy-schedule')
 var randombytes = require('randombytes')
 var defined = require('defined')
@@ -47,7 +46,7 @@ Cal.prototype.query = function (opts, cb) {
   r1.pipe(through.obj(write, done))
 
   if (cb) collect(output, cb)
-  return readonly(output)
+  return output
 
   function write (row, enc, next) {
     var tr = this
