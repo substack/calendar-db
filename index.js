@@ -51,7 +51,7 @@ Cal.prototype.query = function (opts, cb) {
     var id = row.key.split('!')[2]
     self.db.get(ID + id, function (err, doc) {
       if (err) return next(err)
-      var p = parse(doc.time)
+      var p = parse(doc.time, { created: doc.created })
       var b = strftime('%F', p.range[0])
       if (opts.lt === undefined || b < opts.lt) {
         var x = gt
@@ -73,7 +73,7 @@ Cal.prototype.query = function (opts, cb) {
     var id = row.key.split('!')[2]
     self.db.get(ID + id, function (err, doc) {
       if (err) tr.emit('error', err)
-      var p = parse(doc.time)
+      var p = parse(doc.time, { created: doc.created })
       next(err, {
         key: id,
         time: p.range[0],
@@ -84,14 +84,18 @@ Cal.prototype.query = function (opts, cb) {
   function done () { if (--pending === 0) output.end() }
 }
 
-Cal.prototype.prepare = function (time, value, cb) {
-  if (typeof value === 'function') {
-    cb = value
-    value = {}
+Cal.prototype.prepare = function (time, opts, cb) {
+  if (typeof opts === 'function') {
+    cb = opts
+    opts = {}
   }
-  if (!value) value = {}
-  var p = parse(time)
-  var doc = { time: time, value: value }
+  if (!opts) opts = {}
+  var doc = {
+    time: time,
+    value: opts.value || {},
+    created: opts.created || Date.now()
+  }
+  var p = parse(time, { created: doc.created })
 
   var id = randombytes(16).toString('hex')
   var batch = []
@@ -118,14 +122,14 @@ Cal.prototype.prepare = function (time, value, cb) {
   return { id: id, batch: batch }
 }
 
-Cal.prototype.add = function (time, value, cb) {
+Cal.prototype.add = function (time, opts, cb) {
   if (!cb) cb = noop
-  if (typeof value === 'function') {
-    cb = value
-    value = {}
+  if (typeof opts === 'function') {
+    cb = opts
+    opts = {}
   }
-  if (!value) value = {}
-  var prep = this.prepare(time, value)
+  if (!opts) opts = {}
+  var prep = this.prepare(time, opts)
   this.db.batch(prep.batch, function (err) {
     if (err) cb(err)
     else cb(null, prep.id)
