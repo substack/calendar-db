@@ -60,10 +60,8 @@ Cal.prototype.query = function (opts, cb) {
           if (x < lt) {
             tr.push({
               key: id,
-              value: {
-                title: doc.title,
-                time: x
-              }
+              time: x,
+              value: doc.value
             })
           }
         } while (x < lt)
@@ -78,36 +76,34 @@ Cal.prototype.query = function (opts, cb) {
       var p = parse(doc.time)
       next(err, {
         key: id,
-        value: {
-          title: doc.title,
-          time: p.range[0]
-        }
+        time: p.range[0],
+        value: doc.value
       })
     })
   }
   function done () { if (--pending === 0) output.end() }
 }
 
-Cal.prototype.prepare = function (ev, cb) {
-  var p
-  if (typeof ev === 'string') {
-    ev = { time: ev }
-    p = parse(ev.time)
-    ev.title = p.title
-  } else {
-    p = parse(ev.time)
+Cal.prototype.prepare = function (time, value, cb) {
+  if (typeof value === 'function') {
+    cb = value
+    value = {}
   }
+  if (!value) value = {}
+  var p = parse(time)
+  var doc = { time: time, value: value }
+
   var id = randombytes(16).toString('hex')
   var batch = []
   if (p.oneTime) {
-    batch.push({ type: 'put', key: ID + id, value: ev })
+    batch.push({ type: 'put', key: ID + id, value: doc })
     batch.push({
       type: 'put',
       key: ONETIME + strftime('%F', p.range[0]) + '!' + id,
       value: 0
     })
   } else {
-    batch.push({ type: 'put', key: ID + id, value: ev })
+    batch.push({ type: 'put', key: ID + id, value: doc })
     batch.push({
       type: 'put',
       key: BEGIN + strftime('%F', p.range[0]) + '!' + id,
@@ -122,8 +118,14 @@ Cal.prototype.prepare = function (ev, cb) {
   return { id: id, batch: batch }
 }
 
-Cal.prototype.add = function (ev, cb) {
-  var prep = this.prepare(ev)
+Cal.prototype.add = function (time, value, cb) {
+  if (!cb) cb = noop
+  if (typeof value === 'function') {
+    cb = value
+    value = {}
+  }
+  if (!value) value = {}
+  var prep = this.prepare(time, value)
   this.db.batch(prep.batch, function (err) {
     if (err) cb(err)
     else cb(null, prep.id)
