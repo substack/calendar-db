@@ -15,7 +15,7 @@ test('month', function (t) {
       }
     },
     {
-      time: 'sunday may 22',
+      time: 'sunday may 22nd',
       opts: {
         created: '2016-05-21',
         value: { title: 'open hack' }
@@ -53,7 +53,7 @@ test('month', function (t) {
       },
       {
         key: ids[1],
-        time: '2016-05-21',
+        time: '2016-05-22',
         value: { title: 'open hack' }
       },
       {
