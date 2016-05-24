@@ -93,7 +93,7 @@ Cal.prototype.query = function (opts, cb) {
   }
 }
 
-Cal.prototype.prepare = function (time, opts, cb) {
+Cal.prototype.prepare = function (time, opts) {
   if (typeof opts === 'function') {
     cb = opts
     opts = {}
