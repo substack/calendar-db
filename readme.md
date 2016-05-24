@@ -113,11 +113,17 @@ Remove a document by its `id`.
 
 ## cal.prepare(time, opts, cb)
 
-Like add, but do not write to the database. Instead, return an object `res` that
-you can use to batch insert into the database yourself:
+Like add, but do not write to the database. Instead, `prepare()` returns an
+object `res` that you can use to batch insert into the database yourself:
 
 * `res.id` - id of the event
 * `res.batch` - array of documents to batch insert into the database
+
+Optionally specify:
+
+* `opts.created` - parse relative to this time
+* `opts.value` - a value to store alongside the time
+* `opts.type` - `'put'` (default) or `'del'`
 
 The batch data is more useful if you wish to insert additional documents
 atomically along with the event data.

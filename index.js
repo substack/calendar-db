@@ -105,25 +105,26 @@ Cal.prototype.prepare = function (time, opts, cb) {
     created: opts.created || Date.now()
   }
   var p = parse(time, { created: doc.created })
+  var type = defined(opts.type, 'put')
 
   var id = defined(opts.id, randombytes(16).toString('hex'))
   var batch = []
   if (p.oneTime) {
-    batch.push({ type: 'put', key: ID + id, value: doc })
+    batch.push({ type: type, key: ID + id, value: doc })
     batch.push({
-      type: 'put',
+      type: type,
       key: ONETIME + strftime('%F', p.range[0]) + '!' + id,
       value: 0
     })
   } else {
-    batch.push({ type: 'put', key: ID + id, value: doc })
+    batch.push({ type: type, key: ID + id, value: doc })
     batch.push({
-      type: 'put',
+      type: type,
       key: BEGIN + strftime('%F', p.range[0]) + '!' + id,
       value: 0
     })
     batch.push({
-      type: 'put',
+      type: type,
       key: END + strftime('%F', p.range[1]) + '!' + id,
       value: 0
     })
@@ -155,13 +156,10 @@ Cal.prototype.remove = function (id, cb) {
     if (err) return cb(err)
     var prep = self.prepare(doc.time, {
       id: id,
+      type: 'del',
       created: doc.created
     })
-    self.db.batch(prep.batch.map(function (row) {
-      row.type = 'del'
-      delete row.value
-      return row
-    }), cb)
+    self.db.batch(prep.batch, cb)
   })
 }
 
