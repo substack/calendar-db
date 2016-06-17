@@ -28,8 +28,8 @@ Cal.prototype.query = function (opts, cb) {
   var cursors = []
 
   var lt = opts.lt, gt = opts.gt
-  if (lt !== undefined && tostr(lt) !== '[object Date]') lt = new Date(lt)
-  if (gt !== undefined && tostr(gt) !== '[object Date]') gt = new Date(gt)
+  if (lt !== undefined && tostr(lt) !== '[object Date]') lt = newDate(lt)
+  if (gt !== undefined && tostr(gt) !== '[object Date]') gt = newDate(gt)
   var gtstr = gt && strftime('%F', gt)
   var ltstr = lt && strftime('%F', lt)
 
@@ -167,3 +167,8 @@ Cal.prototype.remove = function (id, cb) {
 
 function noop () {}
 function tostr (x) { return Object.prototype.toString.call(x) }
+
+function newDate (str) {
+  if (/\b\d+:\d+(:\d+)?\b/.test(str)) return new Date(str)
+  else return new Date(str + ' 00:00:00')
+}
