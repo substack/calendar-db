@@ -30,16 +30,18 @@ Cal.prototype.query = function (opts, cb) {
   var lt = opts.lt, gt = opts.gt
   if (lt !== undefined && tostr(lt) !== '[object Date]') lt = new Date(lt)
   if (gt !== undefined && tostr(gt) !== '[object Date]') gt = new Date(gt)
+  var gtstr = gt && strftime('%F', gt)
+  var ltstr = lt && strftime('%F', lt)
 
   var r0 = self.db.createReadStream({
-    gt: ONETIME + defined(opts.gt, ''),
-    lt: ONETIME + defined(opts.lt, '\uffff')
+    gt: ONETIME + defined(gtstr, ''),
+    lt: ONETIME + defined(ltstr, '\uffff')
   })
   r0.on('error', output.emit.bind(output, 'error'))
   r0.pipe(through.obj(write, done))
 
   var r1 = self.db.createReadStream({
-    gt: END + defined(opts.gt, ''),
+    gt: END + defined(gtstr, ''),
     lt: END + '\uffff'
   })
   r1.on('error', output.emit.bind(output, 'error'))
@@ -55,7 +57,7 @@ Cal.prototype.query = function (opts, cb) {
       if (err) return next(err)
       var p = parse(doc.time, { created: doc.created })
       var b = strftime('%F', p.range[0])
-      if (opts.lt === undefined || b < opts.lt) {
+      if (!lt || b < ltstr) {
         cursors.push({
           id: id,
           value: doc.value,
